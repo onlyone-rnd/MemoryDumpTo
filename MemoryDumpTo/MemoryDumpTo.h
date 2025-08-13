@@ -29,7 +29,7 @@ extern int hMenuStack;
 #define szMemoryDumpToAbout (szMemoryDumpTo TEXT(" \n") szCopyright)
 #define plugin_name "MemoryDumpTo"
 #define plugin_version 1
-#define sz_plugin_version TEXT("0.2")
+#define sz_plugin_version TEXT("0.3")
 
 #define lengthof(s) { sizeof(s) / sizeof((s)[0]) }
 

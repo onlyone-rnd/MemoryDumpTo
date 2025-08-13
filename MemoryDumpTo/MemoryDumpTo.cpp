@@ -1,5 +1,5 @@
 
-#include <MemoryDumpTo.h>
+#include "MemoryDumpTo.h"
 
 // GLOBAL Plugin SDK variables
 int pluginHandle;
@@ -10,7 +10,7 @@ int hMenuDisasm;
 int hMenuDump;
 int hMenuStack;
 
-extern "C" DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+extern "C" BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
     hInstDLL = hinstDLL;
     return TRUE;
@@ -18,11 +18,8 @@ extern "C" DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason,
 
 BOOL AboutDlg()
 {
-    MSGBOXPARAMS mbp;
-    TCHAR Buffer[MAX_PATH / 2];
-
-    __stosb((PBYTE)&mbp, 0, sizeof(mbp));
-    __stosb((PBYTE)&Buffer, 0, sizeof(Buffer));
+    MSGBOXPARAMS mbp{};
+    TCHAR Buffer[MAX_PATH / 2]{};
 
     mbp.cbSize = sizeof(mbp);
     mbp.hwndOwner = hwndDlg;
@@ -32,11 +29,9 @@ BOOL AboutDlg()
     mbp.dwStyle = MB_OK | MB_USERICON;
     mbp.lpszIcon = MAKEINTRESOURCE(IDI_ICON);
 
-
     wsprintf(Buffer, szMemoryDumpToAbout, sz_plugin_version);
     MessageBoxIndirect(&mbp);
 
-    //MessageBox(hwndDlg, Buffer, TEXT("About"), MB_ICONINFORMATION);
     return TRUE;
 }
 
