@@ -1,5 +1,5 @@
 
-#include <MemoryDumpTo.h>
+#include "MemoryDumpTo.h"
 
 SIZE_T ReadMemoryDump(PVOID* MemoryDump)
 {
@@ -9,20 +9,22 @@ SIZE_T ReadMemoryDump(PVOID* MemoryDump)
 
 	if (DbgIsDebugging())
 	{
-		GuiSelectionGet(GUI_DUMP, &sel);
-		SizeDump = sel.end - sel.start;
-		SizeDump++;
-		MemDump = VirtualAlloc(0, SizeDump, MEM_COMMIT, PAGE_READWRITE);
-		if (MemDump)
+		if (GuiSelectionGet(GUI_DUMP, &sel))
 		{
-			if (DbgMemRead(sel.start, MemDump, SizeDump))
+			SizeDump = sel.end - sel.start;
+			SizeDump++;
+			MemDump = VirtualAlloc(0, SizeDump, MEM_COMMIT, PAGE_READWRITE);
+			if (MemDump)
 			{
-				*MemoryDump = MemDump;
-			}
-			else
-			{
-				VirtualFree(MemDump, 0, MEM_RELEASE);
-				SizeDump = 0;
+				if (DbgMemRead(sel.start, MemDump, SizeDump))
+				{
+					*MemoryDump = MemDump;
+				}
+				else
+				{
+					VirtualFree(MemDump, 0, MEM_RELEASE);
+					SizeDump = 0;
+				}
 			}
 		}
 	}
@@ -34,13 +36,12 @@ BOOL SaveToFile()
 	SIZE_T SizeDump = 0;
 	PVOID StartDump;
 	SELECTIONDATA SelectionData;
-	OPENFILENAME ofn;
-	TCHAR FilePath[MAX_PATH];
+	OPENFILENAME ofn{};
+	TCHAR FilePath[MAX_PATH]{};
 	
-	__stosb((PBYTE)&ofn, 0, sizeof(ofn));
-	__stosb((PBYTE)&FilePath, 0, sizeof(FilePath));
+	if (!GuiSelectionGet(GUI_DUMP, &SelectionData))
+		return FALSE;
 
-	GuiSelectionGet(GUI_DUMP, &SelectionData);
 	SizeDump = SelectionData.end - SelectionData.start;
 	if (SizeDump)
 	{
@@ -63,14 +64,15 @@ BOOL SaveToFile()
 		ofn.Flags = OFN_EXPLORER | OFN_HIDEREADONLY | OFN_EXTENSIONDIFFERENT | OFN_OVERWRITEPROMPT;
 		if (GetSaveFileName(&ofn))
 		{
-#ifdef _UNICODE			
+#ifdef _UNICODE
 			DumpMemoryW(DbgGetProcessHandle(), StartDump, SizeDump, FilePath);
 #else
 			DumpMemory(DbgGetProcessHandle(), StartDump, SizeDump, FilePath);
 #endif
+			return TRUE;
 		}
 	}
-	return TRUE;
+	return FALSE;
 }
 
 static INIT_PARAM InitParam;
@@ -78,14 +80,13 @@ static PVOID TableText;
 
 INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	TCHAR FormatBuffer[MAX_PATH / 2];
+	TCHAR FormatBuffer[MAX_PATH / 2]{};
 	
 	switch (uMsg)
 	{
 		case WM_INITDIALOG:
 		{
 			SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInstDLL, MAKEINTRESOURCE(IDI_ICON)));
-			__stosb((PBYTE)&FormatBuffer, 0, sizeof(FormatBuffer));
 			wsprintf(FormatBuffer, szMemoryDumpTo, sz_plugin_version);
 			SendMessage(hWnd, WM_SETTEXT, 0, (LPARAM)FormatBuffer);
 			lstrcpy(FormatBuffer, szCopyright);
@@ -109,14 +110,12 @@ INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				case BYTE_RBN:
 				{
-					
 					TableText = CreateTableText(InitParam.DataPtr, InitParam.DataSize, InitParam.ProgLang, MD_Byte);
 					if (TableText)
 					{
 						SendMessage(GetDlgItem(hWnd, EXPORT_EDT), WM_CLEAR, 0, 0);
 						SendMessageA(GetDlgItem(hWnd, EXPORT_EDT), WM_SETTEXT, 0, (LPARAM)TableText);
 						VirtualFree(TableText, 0, MEM_RELEASE);
-
 					}
 				}
 				return (INT_PTR)TRUE;

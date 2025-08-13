@@ -1,5 +1,5 @@
 
-#include <MemoryDumpTo.h>
+#include "MemoryDumpTo.h"
 
 #define szHeaderDELPHI   "const Table: array[0..%u] of %s = (\r\n"
 #define szHeaderCPP      "const %s Table[%u] = {\r\n"
