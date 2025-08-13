@@ -1,0 +1,13 @@
+.vs
+x64/Release/temp
+x86/Release/temp
+x64/Debug/temp
+x86/Debug/temp
+x64/Debug/MemoryDumpTo.exp
+x64/Debug/MemoryDumpTo.lib
+x64/Release/MemoryDumpTo.exp
+x64/Release/MemoryDumpTo.lib
+x86/Debug/MemoryDumpTo.exp
+x86/Debug/MemoryDumpTo.lib
+x86/Release/MemoryDumpTo.exp
+x86/Release/MemoryDumpTo.lib

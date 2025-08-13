@@ -180,7 +180,7 @@ BOOL CopyToClipboard(HWND hWnd)
 	if (OpenClipboard(hWnd))
 	{
 		EmptyClipboard();
-		if (TextLen = SendMessageA(hWnd, WM_GETTEXTLENGTH, 0, 0))
+		if (TextLen = (int)SendMessageA(hWnd, WM_GETTEXTLENGTH, 0, 0))
 		{
 			if (hGlob = GlobalAlloc(GMEM_MOVEABLE, TextLen + 1))
 			{

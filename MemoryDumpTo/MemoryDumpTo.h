@@ -24,12 +24,12 @@ extern int hMenuDump;
 extern int hMenuStack;
 
 #define szMemoryDumpTo TEXT("MemoryDumpTo v%s")
-#define szCopyright TEXT("©2023 OnLyOnE")
+#define szCopyright TEXT("©2025 OnLyOnE")
 #define szCopyright2 TEXT(", aLL rIGHTS rEVERSED")
 #define szMemoryDumpToAbout (szMemoryDumpTo TEXT(" \n") szCopyright)
 #define plugin_name "MemoryDumpTo"
 #define plugin_version 1
-#define sz_plugin_version TEXT("0.1")
+#define sz_plugin_version TEXT("0.2")
 
 #define lengthof(s) { sizeof(s) / sizeof((s)[0]) }
 

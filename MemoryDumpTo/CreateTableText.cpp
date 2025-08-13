@@ -58,7 +58,7 @@ PCHAR PrintTableHeader(PCHAR InBuffer, BOOL ProgLang, BOOL SizeSeg, SIZE_T NumbS
 		{
 			szSize = "Longword";
 		}
-		CurrPtr += wsprintfA(CurrPtr, szHeaderDELPHI, (NumbSeg - 1), szSize);
+		CurrPtr += wsprintfA(CurrPtr, szHeaderDELPHI, (int)(NumbSeg - 1), szSize);
 	}
 	else if (ProgLang == MD_CPP)
 	{		
@@ -74,7 +74,7 @@ PCHAR PrintTableHeader(PCHAR InBuffer, BOOL ProgLang, BOOL SizeSeg, SIZE_T NumbS
 		{
 			szSize = "ULONG";
 		}
-		CurrPtr += wsprintfA(CurrPtr, szHeaderCPP, szSize, NumbSeg);
+		CurrPtr += wsprintfA(CurrPtr, szHeaderCPP, szSize, (int)NumbSeg);
 	}
 	else if (ProgLang == MD_ASM)
 	{
@@ -83,7 +83,7 @@ PCHAR PrintTableHeader(PCHAR InBuffer, BOOL ProgLang, BOOL SizeSeg, SIZE_T NumbS
 	}
 	else // MD_VB
 	{
-		CurrPtr += wsprintfA(CurrPtr, szHeaderVB, (NumbSeg - 1));
+		CurrPtr += wsprintfA(CurrPtr, szHeaderVB, (int)(NumbSeg - 1));
 	}
 
 	return CurrPtr;
@@ -259,7 +259,7 @@ PVOID CreateTableText(PVOID InBuffer, SIZE_T InBuffSize, BOOL ProgLang, BOOL Siz
 		NumbSeg = NumbSeg / Align;
 	}
 
-	OutBuffSize = InBuffSize * 6;
+	OutBuffSize = InBuffSize * 8;
 	OutBuffer = VirtualAlloc(0, OutBuffSize, MEM_COMMIT, PAGE_READWRITE);
 	if (OutBuffer)
 	{
