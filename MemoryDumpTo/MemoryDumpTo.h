@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <psapi.h>
 #include <intrin.h>
+#include <commctrl.h>
 #include <_plugins.h>
 #include "res\resource.h"
 
@@ -24,12 +25,12 @@ extern int hMenuDump;
 extern int hMenuStack;
 
 #define szMemoryDumpTo TEXT("MemoryDumpTo v%s")
-#define szCopyright TEXT("©2025 OnLyOnE")
+#define szCopyright TEXT("©2001-2025 OnLyOnE")
 #define szCopyright2 TEXT(", aLL rIGHTS rEVERSED")
 #define szMemoryDumpToAbout (szMemoryDumpTo TEXT(" \n") szCopyright)
 #define plugin_name "MemoryDumpTo"
 #define plugin_version 1
-#define sz_plugin_version TEXT("0.2")
+#define sz_plugin_version TEXT("0.3")
 
 #define lengthof(s) { sizeof(s) / sizeof((s)[0]) }
 
@@ -42,9 +43,11 @@ typedef struct _INIT_PARAM
 
 enum _SizeData
 {
+    MD_None,
     MD_Byte,
     MD_Word,
-    MD_Dword
+    MD_Dword,
+    MD_Qword
 };
 
 enum MenuAction
@@ -59,7 +62,12 @@ enum MenuAction
 
 BOOL SaveToFile();
 BOOL MemoryDumpToSource(BOOL ProgLang);
-PVOID CreateTableText(PVOID InBuffer, SIZE_T InBuffSize, BOOL ProgLang, BOOL SizeSeg);
+PVOID CreateTableText(
+    PVOID InBuffer,
+    SIZE_T InBuffSize,
+    BOOL ProgLang,
+    BOOL SizeSeg,
+    int SegNumb);
 BOOL CopyToClipboard(HWND hWnd);
 VOID ClearClipboard(HWND hWnd);
 

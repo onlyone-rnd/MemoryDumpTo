@@ -1,6 +1,11 @@
 
 #include <MemoryDumpTo.h>
 
+BOOL IsDELPHI = FALSE;
+BOOL IsCPP    = FALSE;
+BOOL IsASM    = FALSE;
+BOOL IsVB     = FALSE;
+
 SIZE_T ReadMemoryDump(PVOID* MemoryDump)
 {
 	SIZE_T SizeDump = 0;
@@ -75,10 +80,25 @@ BOOL SaveToFile()
 
 static INIT_PARAM InitParam;
 static PVOID TableText;
+_SizeData CurrSize = MD_None;
+
+void FinalText(
+	_In_ HWND hWnd,
+	_In_ _SizeData Size)
+{
+	int SegNumb = (int)(INT_PTR)SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_GETPOS32, 0, 0);
+	TableText = CreateTableText(InitParam.DataPtr, InitParam.DataSize, InitParam.ProgLang, Size, SegNumb);
+	if (TableText)
+	{
+		SendMessage(GetDlgItem(hWnd, EXPORT_EDT), WM_CLEAR, 0, 0);
+		SendMessageA(GetDlgItem(hWnd, EXPORT_EDT), WM_SETTEXT, 0, (LPARAM)TableText);
+		VirtualFree(TableText, 0, MEM_RELEASE);
+	}
+}
 
 INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	TCHAR FormatBuffer[MAX_PATH / 2];
+	static TCHAR FormatBuffer[MAX_PATH / 2];
 	
 	switch (uMsg)
 	{
@@ -93,15 +113,30 @@ INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendMessage(GetDlgItem(hWnd, COPYR_STC), WM_SETTEXT, 0, (LPARAM)FormatBuffer);
 			CheckDlgButton(hWnd, BYTE_RBN, TRUE);
 			SendMessage(GetDlgItem(hWnd, BYTE_RBN), BM_CLICK, 0, 0);
+			if (IsVB)
+				EnableWindow(GetDlgItem(hWnd, QWORD_RBN), FALSE);
+			else
+				EnableWindow(GetDlgItem(hWnd, QWORD_RBN), TRUE);
+			SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_SETRANGE32, 4, 16);
 		}
 		return (INT_PTR)TRUE;
 
 		case WM_CLOSE:
 		{
-			ClearClipboard(hWnd);
 			EndDialog(hWnd, NULL);
 		}
 		return (INT_PTR)TRUE;
+
+		case WM_NOTIFY:
+		{
+			LPNMHDR pnmh = (LPNMHDR)lParam;
+			if (pnmh->code == UDN_DELTAPOS && pnmh->idFrom == LINE_UDN)
+			{
+				FinalText(hWnd, CurrSize);
+			}
+		}
+		return (INT_PTR)TRUE;
+		break;
 
 		case WM_COMMAND:
 		{
@@ -109,47 +144,46 @@ INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				case BYTE_RBN:
 				{
-					
-					TableText = CreateTableText(InitParam.DataPtr, InitParam.DataSize, InitParam.ProgLang, MD_Byte);
-					if (TableText)
-					{
-						SendMessage(GetDlgItem(hWnd, EXPORT_EDT), WM_CLEAR, 0, 0);
-						SendMessageA(GetDlgItem(hWnd, EXPORT_EDT), WM_SETTEXT, 0, (LPARAM)TableText);
-						VirtualFree(TableText, 0, MEM_RELEASE);
-
-					}
+					CurrSize = MD_Byte;
+					SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_SETPOS32, 0, 16);
+					FinalText(hWnd, CurrSize);
 				}
 				return (INT_PTR)TRUE;
+				break;
 
 				case WORD_RBN:
 				{
-					TableText = CreateTableText(InitParam.DataPtr, InitParam.DataSize, InitParam.ProgLang, MD_Word);
-					if (TableText)
-					{
-						SendMessage(GetDlgItem(hWnd, EXPORT_EDT), WM_CLEAR, 0, 0);
-						SendMessageA(GetDlgItem(hWnd, EXPORT_EDT), WM_SETTEXT, 0, (LPARAM)TableText);
-						VirtualFree(TableText, 0, MEM_RELEASE);
-					}
+					CurrSize = MD_Word;
+					SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_SETPOS32, 0, 8);
+					FinalText(hWnd, CurrSize);
 				}
 				return (INT_PTR)TRUE;
+				break;
 
 				case DWORD_RBN:
 				{
-					TableText = CreateTableText(InitParam.DataPtr, InitParam.DataSize, InitParam.ProgLang, MD_Dword);
-					if (TableText)
-					{
-						SendMessage(GetDlgItem(hWnd, EXPORT_EDT), WM_CLEAR, 0, 0);
-						SendMessageA(GetDlgItem(hWnd, EXPORT_EDT), WM_SETTEXT, 0, (LPARAM)TableText);
-						VirtualFree(TableText, 0, MEM_RELEASE);
-					}
+					CurrSize = MD_Dword;
+					SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_SETPOS32, 0, 8);
+					FinalText(hWnd, CurrSize);
 				}
 				return (INT_PTR)TRUE;
+				break;
+
+				case QWORD_RBN:
+				{
+					CurrSize = MD_Qword;
+					SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_SETPOS32, 0, 4);
+					FinalText(hWnd, CurrSize);
+				}
+				return (INT_PTR)TRUE;
+				break;
 
 				case COPY_BTN:
 				{
 					CopyToClipboard(GetDlgItem(hWnd, EXPORT_EDT));
 				}
 				return (INT_PTR)TRUE;
+				break;
 			}
 		}
 	}
@@ -159,6 +193,20 @@ INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 BOOL MemoryDumpToSource(BOOL ProgLang)
 {
 	InitParam = {0};
+
+	IsDELPHI = FALSE;
+	IsCPP = FALSE;
+	IsASM = FALSE;
+	IsVB = FALSE;
+
+	if (ProgLang == MD_DELPHI)
+		IsDELPHI = TRUE;
+	else if (ProgLang == MD_CPP)
+		IsCPP = TRUE;
+	else if (ProgLang == MD_ASM)
+		IsASM = TRUE;
+	else if (ProgLang == MD_VB)
+		IsVB = TRUE;
 
 	InitParam.ProgLang = ProgLang;
 	InitParam.DataSize = ReadMemoryDump(&InitParam.DataPtr);

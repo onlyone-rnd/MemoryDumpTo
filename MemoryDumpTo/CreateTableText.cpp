@@ -6,24 +6,32 @@
 #define szHeaderASM      "Table \\\r\n"
 #define szHeaderVB       "ReDim Table(%u)\r\n  Table = Array( "
 
-#define Del_FormateByte  "$%02X"
-#define Cpp_FormateByte  "0x%02X"
-#define Asm_FormateByte  "%03Xh"
-#define Vbs_FormateByte  "&H%02X"
+#define Del_FormateByte  "$%.2X"
+#define Cpp_FormateByte  "0x%.2X"
+#define Asm_FormateByte  "%.3Xh"
+#define Vbs_FormateByte  "&H%.2X"
 
-#define Del_FormateWord  "$%04X"
-#define Cpp_FormateWord  "0x%04X"
-#define Asm_FormateWord  "%05Xh"
-#define Vbs_FormateWord  "&H%04X"
+#define Del_FormateWord  "$%.4X"
+#define Cpp_FormateWord  "0x%.4X"
+#define Asm_FormateWord  "%.5Xh"
+#define Vbs_FormateWord  "&H%.4X"
 
-#define Del_FormateDword "$%08X"
-#define Cpp_FormateDword "0x%08X"
-#define Asm_FormateDword "%09Xh"
-#define Vbs_FormateDword "&H%08X"
+#define Del_FormateDword "$%.8X"
+#define Cpp_FormateDword "0x%.8X"
+#define Asm_FormateDword "%.9Xh"
+#define Vbs_FormateDword "&H%.8X"
+
+#define Del_FormateQword "$%.16I64X"
+#define Cpp_FormateQword "0x%.16I64X"
+#define Asm_FormateQword "%.17I64Xh"
+#define Vbs_FormateQword "&H%.16I64XUL" // VB.NET
 
 #define Asm_Byte  "BYTE "
 #define Asm_Word  "WORD "
 #define Asm_Dword "DWORD "
+#define Asm_Qword "QWORD "
+
+#pragma warning(disable : 6387)
 
 SIZE_T Alignment(SIZE_T InSize, int Align)
 {
@@ -54,9 +62,13 @@ PCHAR PrintTableHeader(PCHAR InBuffer, BOOL ProgLang, BOOL SizeSeg, SIZE_T NumbS
 		{
 			szSize = "Word";
 		}
-		else // MD_Dword
+		else if (SizeSeg == MD_Dword)
 		{
 			szSize = "Longword";
+		}
+		else if (SizeSeg == MD_Qword)
+		{
+			szSize = "UInt64";
 		}
 		CurrPtr += wsprintfA(CurrPtr, szHeaderDELPHI, (int)(NumbSeg - 1), szSize);
 	}
@@ -70,9 +82,13 @@ PCHAR PrintTableHeader(PCHAR InBuffer, BOOL ProgLang, BOOL SizeSeg, SIZE_T NumbS
 		{
 			szSize = "USHORT";
 		}
-		else // MD_Dword
+		else if (SizeSeg == MD_Dword)
 		{
 			szSize = "ULONG";
+		}
+		else if (SizeSeg == MD_Qword)
+		{
+			szSize = "ULONG64";
 		}
 		CurrPtr += wsprintfA(CurrPtr, szHeaderCPP, szSize, (int)NumbSeg);
 	}
@@ -89,47 +105,50 @@ PCHAR PrintTableHeader(PCHAR InBuffer, BOOL ProgLang, BOOL SizeSeg, SIZE_T NumbS
 	return CurrPtr;
 }
 
-VOID PrintTable(PCHAR InBuffer, PVOID InData, BOOL ProgLang, BOOL SizeSeg, SIZE_T NumbSeg)
+VOID PrintTable(PCHAR InBuffer, PVOID InData, BOOL ProgLang, BOOL SizeSeg, SIZE_T NumbSeg, int SegNumb)
 {
 	BOOL Vb_First_Block = 0;
 	int SegCount = 0;
-	int SegNumb;
-	PCHAR CurrPtr;
-	PBYTE pByte = 0;
-	PWORD pWord = 0;
-	PDWORD pDword = 0;
-	LPSTR Formate;
-	LPSTR AsmPefix = 0;
+	PCHAR CurrPtr = nullptr;
+	PBYTE pByte = nullptr;
+	PWORD pWord = nullptr;
+	PDWORD pDword = nullptr;
+	PDWORD64 pQword = nullptr;
+	LPSTR Formate = nullptr;
+	LPSTR AsmPefix = nullptr;
 
 	CurrPtr = PrintTableHeader(InBuffer, ProgLang, SizeSeg, NumbSeg);
 
 	if (SizeSeg == MD_Byte)
 	{
 		pByte = (PBYTE)InData;
-		SegNumb = 16;
 	}
 	else if (SizeSeg == MD_Word)
 	{
 		pWord = (PWORD)InData;
-		SegNumb = 8;
 	}
-	else // MD_Dword
+	else if (SizeSeg == MD_Dword)
 	{
 		pDword = (PDWORD)InData;
-		SegNumb = 8;
+	}
+	else if (SizeSeg == MD_Qword)
+	{
+		pQword = (PDWORD64)InData;
 	}
 	
 	if (ProgLang == MD_DELPHI)
 	{
 		if (pByte) Formate = Del_FormateByte;
 		else if (pWord) Formate = Del_FormateWord;
-		else Formate = Del_FormateDword;
+		else if (pDword) Formate = Del_FormateDword;
+		else if (pQword) Formate = Del_FormateQword;
 	}
 	else if (ProgLang == MD_CPP)
 	{
 		if (pByte) Formate = Cpp_FormateByte;
 		else if (pWord) Formate = Cpp_FormateWord;
-		else Formate = Cpp_FormateDword;
+		else if (pDword) Formate = Cpp_FormateDword;
+		else if (pQword) Formate = Cpp_FormateQword;
 	}
 	else if (ProgLang == MD_ASM)
 	{
@@ -143,92 +162,99 @@ VOID PrintTable(PCHAR InBuffer, PVOID InData, BOOL ProgLang, BOOL SizeSeg, SIZE_
 			Formate = Asm_FormateWord;
 			AsmPefix = Asm_Word;
 		}
-		else
+		else if (pDword)
 		{
 			AsmPefix = Asm_Dword;
 			Formate = Asm_FormateDword;
 		}
+		else if (pQword)
+		{
+			AsmPefix = Asm_Qword;
+			Formate = Asm_FormateQword;
+		}
 	}
-	else // MD_VB
+	else if (ProgLang == MD_VB)
 	{
 		if (pByte) Formate = Vbs_FormateByte;
 		else if (pWord) Formate = Vbs_FormateWord;
 		else Formate = Vbs_FormateDword;
 	}
 
-		for (;;)
+	for (;;)
+	{
+		if (!SegCount)
 		{
-			if (!SegCount)
+			if (ProgLang == MD_ASM)
 			{
-				if (ProgLang == MD_ASM)
-				{
-					lstrcpyA(CurrPtr, AsmPefix);
-					CurrPtr += lstrlenA(AsmPefix);
+				lstrcpyA(CurrPtr, AsmPefix);
+				CurrPtr += lstrlenA(AsmPefix);
 
-				}
-				else if (ProgLang == MD_VB)
+			}
+			else if (ProgLang == MD_VB)
+			{
+				if (!Vb_First_Block)
 				{
-					if (!Vb_First_Block)
-					{
-						Vb_First_Block++;
-					}
-					else
-					{
-						lstrcpyA(CurrPtr, "                 ");
-						CurrPtr += 17;
-					}
+					Vb_First_Block++;
 				}
 				else
 				{
-					lstrcpyA(CurrPtr, "    ");
-					CurrPtr += 4;
-				}
-			}
-			else if (SegCount == SegNumb)
-			{
-				SegCount = 0;
-				continue;
-			}
-			if (pByte) CurrPtr += wsprintfA(CurrPtr, Formate, *pByte);
-			if (pWord) CurrPtr += wsprintfA(CurrPtr, Formate, *pWord);
-			if (pDword) CurrPtr += wsprintfA(CurrPtr, Formate, *pDword);
-			NumbSeg--;
-			if (!NumbSeg)
-				break;
-			
-			if (SegCount == SegNumb - 1)
-			{
-				if (ProgLang != MD_ASM)
-				{
-					lstrcpyA(CurrPtr, ",");
-					CurrPtr++;
+					lstrcpyA(CurrPtr, "                 ");
+					CurrPtr += 17;
 				}
 			}
 			else
+			{
+				lstrcpyA(CurrPtr, "    ");
+				CurrPtr += 4;
+			}
+		}
+		else if (SegCount == SegNumb)
+		{
+			SegCount = 0;
+			continue;
+		}
+		if (pByte) CurrPtr += wsprintfA(CurrPtr, Formate, *pByte);
+		if (pWord) CurrPtr += wsprintfA(CurrPtr, Formate, *pWord);
+		if (pDword) CurrPtr += wsprintfA(CurrPtr, Formate, *pDword);
+		if (pQword) CurrPtr += wsprintfA(CurrPtr, Formate, *pQword);
+		NumbSeg--;
+		if (!NumbSeg)
+			break;
+			
+		if (SegCount == SegNumb - 1)
+		{
+			if (ProgLang != MD_ASM)
 			{
 				lstrcpyA(CurrPtr, ",");
 				CurrPtr++;
 			}
-			if (SegCount == SegNumb - 1)
+		}
+		else
+		{
+			lstrcpyA(CurrPtr, ",");
+			CurrPtr++;
+		}
+		if (SegCount == SegNumb - 1)
+		{
+			if (ProgLang == MD_VB)
 			{
-				if (ProgLang == MD_VB)
-				{
-					lstrcpyA(CurrPtr, " _");
-					CurrPtr += 2;
-				}
-				lstrcpyA(CurrPtr, "\r\n");
+				lstrcpyA(CurrPtr, " _");
 				CurrPtr += 2;
 			}
-			else
-			{
-				lstrcpyA(CurrPtr, " ");
-				CurrPtr++;
-			}
-			if (pByte) pByte++;
-			if (pWord) pWord++;
-			if (pDword) pDword++;
-			SegCount++;
-		};
+			lstrcpyA(CurrPtr, "\r\n");
+			CurrPtr += 2;
+		}
+		else
+		{
+			lstrcpyA(CurrPtr, " ");
+			CurrPtr++;
+		}
+		if (pByte) pByte++;
+		if (pWord) pWord++;
+		if (pDword) pDword++;
+		if (pQword) pQword++;
+		SegCount++;
+	};
 
 	if (ProgLang == MD_DELPHI)
 		lstrcpyA(CurrPtr, " );\r\n");
@@ -236,24 +262,26 @@ VOID PrintTable(PCHAR InBuffer, PVOID InData, BOOL ProgLang, BOOL SizeSeg, SIZE_
 		lstrcpyA(CurrPtr, " };\r\n");
 	else if (ProgLang == MD_ASM)
 		lstrcpyA(CurrPtr, "\r\n");
-	else // MD_VB
+	else if (ProgLang == MD_VB)
 		lstrcpyA(CurrPtr, " )\r\n");
 }
 
-PVOID CreateTableText(PVOID InBuffer, SIZE_T InBuffSize, BOOL ProgLang, BOOL SizeSeg)
+PVOID CreateTableText(PVOID InBuffer, SIZE_T InBuffSize, BOOL ProgLang, BOOL SizeSeg, int SegNumb)
 {
 	SIZE_T OutBuffSize = 0;
-	SIZE_T NumbSeg;
-	int Align;
+	SIZE_T NumbSeg = 0;
+	int Align = 0;
 	PVOID OutBuffer = 0;
 
 	NumbSeg = InBuffSize;
-	if (SizeSeg == MD_Word || SizeSeg == MD_Dword)
+	if (SizeSeg == MD_Word || SizeSeg == MD_Dword || SizeSeg == MD_Qword)
 	{
 		if (SizeSeg == MD_Word)
 			Align = sizeof(WORD);
-		else
+		else if (SizeSeg == MD_Dword)
 			Align = sizeof(DWORD);
+		else if (SizeSeg == MD_Qword)
+			Align = sizeof(DWORD64);
 
 		NumbSeg = Alignment(NumbSeg, Align);
 		NumbSeg = NumbSeg / Align;
@@ -263,7 +291,7 @@ PVOID CreateTableText(PVOID InBuffer, SIZE_T InBuffSize, BOOL ProgLang, BOOL Siz
 	OutBuffer = VirtualAlloc(0, OutBuffSize, MEM_COMMIT, PAGE_READWRITE);
 	if (OutBuffer)
 	{
-		PrintTable((PCHAR)OutBuffer, InBuffer, ProgLang, SizeSeg, NumbSeg);
+		PrintTable((PCHAR)OutBuffer, InBuffer, ProgLang, SizeSeg, NumbSeg, SegNumb);
 	}
 	return OutBuffer;
 }

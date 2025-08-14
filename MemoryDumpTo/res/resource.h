@@ -9,10 +9,14 @@
 #define BYTE_RBN                        2002
 #define WORD_RBN                        2003
 #define DWORD_RBN                       2004
+#define QWORD_RBN                       2005
 #define COPY_BTN                        2006
 #define CLOSE_BTN                       2007
 #define COPYR_STC                       2008
+#define LINE_EDT                        2009
 #define SIZE_GRP                        3002
+#define LINE_GRP                        3003
+#define LINE_UDN                        3004
 
 // Next default values for new objects
 // 

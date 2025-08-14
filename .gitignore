@@ -11,3 +11,4 @@ x86/Debug/MemoryDumpTo.exp
 x86/Debug/MemoryDumpTo.lib
 x86/Release/MemoryDumpTo.exp
 x86/Release/MemoryDumpTo.lib
+MemoryDumpTo/res/rsrc.aps
