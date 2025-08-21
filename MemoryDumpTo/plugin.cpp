@@ -1,5 +1,5 @@
 
-#include <MemoryDumpTo.h>
+#include "MemoryDumpTo.h"
 
 BOOL IsDELPHI = FALSE;
 BOOL IsCPP    = FALSE;
@@ -96,6 +96,10 @@ void FinalText(
 	}
 }
 
+HHOOK  g_hHook = NULL;
+HACCEL g_hAccel = NULL;
+HWND   g_hAccelTarget = NULL;
+
 INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	static TCHAR FormatBuffer[MAX_PATH / 2];
@@ -111,21 +115,21 @@ INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			lstrcpy(FormatBuffer, szCopyright);
 			lstrcat(FormatBuffer, szCopyright2);			
 			SendMessage(GetDlgItem(hWnd, COPYR_STC), WM_SETTEXT, 0, (LPARAM)FormatBuffer);
-			CheckDlgButton(hWnd, BYTE_RBN, TRUE);
 			SendMessage(GetDlgItem(hWnd, BYTE_RBN), BM_CLICK, 0, 0);
 			if (IsVB)
 				EnableWindow(GetDlgItem(hWnd, QWORD_RBN), FALSE);
 			else
 				EnableWindow(GetDlgItem(hWnd, QWORD_RBN), TRUE);
 			SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_SETRANGE32, 4, 16);
+			g_hAccelTarget = hWnd;
 		}
-		return (INT_PTR)TRUE;
+		break;
 
 		case WM_CLOSE:
 		{
 			EndDialog(hWnd, NULL);
 		}
-		return (INT_PTR)TRUE;
+		break;;
 
 		case WM_NOTIFY:
 		{
@@ -135,12 +139,17 @@ INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				FinalText(hWnd, CurrSize);
 			}
 		}
-		return (INT_PTR)TRUE;
+		break;
+
+		case WM_SYSCHAR:
+		{
+			return (INT_PTR)TRUE;
+		}
 		break;
 
 		case WM_COMMAND:
 		{
-			switch (wParam)
+			switch (LOWORD(wParam))
 			{
 				case BYTE_RBN:
 				{
@@ -148,7 +157,6 @@ INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_SETPOS32, 0, 16);
 					FinalText(hWnd, CurrSize);
 				}
-				return (INT_PTR)TRUE;
 				break;
 
 				case WORD_RBN:
@@ -157,7 +165,6 @@ INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_SETPOS32, 0, 8);
 					FinalText(hWnd, CurrSize);
 				}
-				return (INT_PTR)TRUE;
 				break;
 
 				case DWORD_RBN:
@@ -166,7 +173,6 @@ INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_SETPOS32, 0, 8);
 					FinalText(hWnd, CurrSize);
 				}
-				return (INT_PTR)TRUE;
 				break;
 
 				case QWORD_RBN:
@@ -175,19 +181,64 @@ INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					SendMessage(GetDlgItem(hWnd, LINE_UDN), UDM_SETPOS32, 0, 4);
 					FinalText(hWnd, CurrSize);
 				}
-				return (INT_PTR)TRUE;
 				break;
 
 				case COPY_BTN:
 				{
 					CopyToClipboard(GetDlgItem(hWnd, EXPORT_EDT));
 				}
-				return (INT_PTR)TRUE;
+				break;
+
+				case ID_COPY:
+				{
+					CopyToClipboard(GetDlgItem(hWnd, EXPORT_EDT));
+				}
+				break;
+
+				case ID_BYTE:
+				{
+					SendMessage(GetDlgItem(hWnd, BYTE_RBN), BM_CLICK, 0, 0);
+				}
+				break;
+
+				case ID_WORD:
+				{
+					SendMessage(GetDlgItem(hWnd, WORD_RBN), BM_CLICK, 0, 0);
+				}
+				break;
+
+				case ID_DWORD:
+				{
+					SendMessage(GetDlgItem(hWnd, DWORD_RBN), BM_CLICK, 0, 0);
+				}
+				break;
+
+				case ID_QWORD:
+				{
+					SendMessage(GetDlgItem(hWnd, QWORD_RBN), BM_CLICK, 0, 0);
+				}
 				break;
 			}
+			break;
 		}
 	}
 	return (INT_PTR)FALSE;
+}
+
+LRESULT CALLBACK MsgFilterProc(int code, WPARAM wParam, LPARAM lParam)
+{
+	if (code == MSGF_DIALOGBOX || code == MSGF_MENU)
+	{
+		MSG* p = (MSG*)lParam;
+		if (g_hAccel && g_hAccelTarget)
+		{
+			if (TranslateAcceleratorW(g_hAccelTarget, g_hAccel, p))
+			{
+				return 1;
+			}
+		}
+	}
+	return CallNextHookEx(g_hHook, code, wParam, lParam);
 }
 
 BOOL MemoryDumpToSource(BOOL ProgLang)
@@ -212,7 +263,17 @@ BOOL MemoryDumpToSource(BOOL ProgLang)
 	InitParam.DataSize = ReadMemoryDump(&InitParam.DataPtr);
 	if (InitParam.DataSize)
 	{
+		g_hAccel = LoadAcceleratorsW(hInstDLL, MAKEINTRESOURCEW(IDR_ACCEL));
+		g_hHook = SetWindowsHookExW(WH_MSGFILTER, MsgFilterProc, NULL, GetCurrentThreadId());
+
 		DialogBoxParam(hInstDLL, MAKEINTRESOURCE(EXPORT_DLG), hwndDlg, &DialogProc, NULL);
+		if (g_hHook)
+		{
+			UnhookWindowsHookEx(g_hHook);
+			g_hHook = NULL;
+		}
+		g_hAccel = NULL;
+		g_hAccelTarget = NULL;
 		VirtualFree(InitParam.DataPtr, 0, MEM_RELEASE);
 	}
 	return TRUE;

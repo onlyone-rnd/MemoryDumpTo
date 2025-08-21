@@ -1,5 +1,5 @@
 
-#include <MemoryDumpTo.h>
+#include "MemoryDumpTo.h"
 
 // GLOBAL Plugin SDK variables
 int pluginHandle;
@@ -10,7 +10,10 @@ int hMenuDisasm;
 int hMenuDump;
 int hMenuStack;
 
-extern "C" DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+BOOL APIENTRY DllMain(
+    HINSTANCE hinstDLL,
+    DWORD fdwReason,
+    LPVOID lpvReserved)
 {
     hInstDLL = hinstDLL;
     return TRUE;

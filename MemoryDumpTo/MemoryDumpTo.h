@@ -2,13 +2,13 @@
 #define _PLUGINMAIN_H
 
 // Include files required for plugin SDK
-#include <TitanEngine.h>
+#include "pluginsdk/TitanEngine/TitanEngine.h"
 #include <windows.h>
 #include <stdio.h>
 #include <psapi.h>
 #include <intrin.h>
 #include <commctrl.h>
-#include <_plugins.h>
+#include "pluginsdk/_plugins.h"
 #include "res\resource.h"
 
 #ifndef DLL_EXPORT
@@ -30,7 +30,7 @@ extern int hMenuStack;
 #define szMemoryDumpToAbout (szMemoryDumpTo TEXT(" \n") szCopyright)
 #define plugin_name "MemoryDumpTo"
 #define plugin_version 1
-#define sz_plugin_version TEXT("0.3")
+#define sz_plugin_version TEXT("0.4")
 
 #define lengthof(s) { sizeof(s) / sizeof((s)[0]) }
 

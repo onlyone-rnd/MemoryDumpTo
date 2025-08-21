@@ -108,7 +108,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <GuardEHContMetadata>false</GuardEHContMetadata>
       <CallingConvention>Cdecl</CallingConvention>
-      <AdditionalIncludeDirectories>.;pluginsdk;pluginsdk\TitanEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -122,7 +123,13 @@
       <EntryPointSymbol>DllMain</EntryPointSymbol>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalOptions>/NOIMPLIB /ignore:4075 /ignore:4254 %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(TargetDir)$(TargetName).exp" del /f /q "$(TargetDir)$(TargetName).exp"
+if exist "$(IntDir)$(TargetName).exp"    del /f /q "$(IntDir)$(TargetName).exp"
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -141,7 +148,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <GuardEHContMetadata>false</GuardEHContMetadata>
       <CallingConvention>Cdecl</CallingConvention>
-      <AdditionalIncludeDirectories>.;pluginsdk;pluginsdk\TitanEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -155,7 +163,13 @@
       <EntryPointSymbol>DllMain</EntryPointSymbol>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalOptions>/NOIMPLIB /ignore:4075 /ignore:4254 %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(TargetDir)$(TargetName).exp" del /f /q "$(TargetDir)$(TargetName).exp"
+if exist "$(IntDir)$(TargetName).exp"    del /f /q "$(IntDir)$(TargetName).exp"
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -175,7 +189,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <GuardEHContMetadata>false</GuardEHContMetadata>
       <CallingConvention>Cdecl</CallingConvention>
-      <AdditionalIncludeDirectories>.;pluginsdk;pluginsdk\TitanEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -189,7 +204,14 @@
       <EntryPointSymbol>DllMain</EntryPointSymbol>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalOptions>/DEBUG:NONE /EMITPOGOPHASEINFO /NOIMPLIB /ignore:4075 /ignore:4254 
+ %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(TargetDir)$(TargetName).exp" del /f /q "$(TargetDir)$(TargetName).exp"
+if exist "$(IntDir)$(TargetName).exp"    del /f /q "$(IntDir)$(TargetName).exp"
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -211,7 +233,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <GuardEHContMetadata>false</GuardEHContMetadata>
       <CallingConvention>Cdecl</CallingConvention>
-      <AdditionalIncludeDirectories>.;pluginsdk;pluginsdk\TitanEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -225,7 +248,14 @@
       <EntryPointSymbol>DllMain</EntryPointSymbol>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalOptions>/DEBUG:NONE /EMITPOGOPHASEINFO /NOIMPLIB /ignore:4075 /ignore:4254 
+ %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(TargetDir)$(TargetName).exp" del /f /q "$(TargetDir)$(TargetName).exp"
+if exist "$(IntDir)$(TargetName).exp"    del /f /q "$(IntDir)$(TargetName).exp"
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CreateTableText.cpp" />
